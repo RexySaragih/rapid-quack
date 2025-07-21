@@ -10,9 +10,13 @@ Instead of using a crosshair to shoot ducks, players type words to shoot them! D
 
 - **Typing-based gameplay** - Type words to shoot ducks
 - **Word difficulty scoring** - Harder words = more points
-- **Multiplayer rooms** - Play with friends in real-time
+- **Combo system** - Score bonus points for consecutive hits
+- **Particle and sound effects** - Visual and audio feedback for actions
+- **Multiplayer rooms** - Play with friends in real-time (in progress)
 - **Real-time scoring** - See other players' scores live
 - **Responsive design** - Works on desktop and mobile
+- **Multiple difficulty levels** - Easy, Normal, Hard, Expert, Duckpocalypse
+- **Room management** - Create, join, and wait in multiplayer rooms
 
 ## 🛠 Tech Stack
 
@@ -22,52 +26,69 @@ Instead of using a crosshair to shoot ducks, players type words to shoot them! D
 - **Socket.io** - Real-time multiplayer
 - **Tailwind CSS** - Styling
 - **Vite** - Development and build tool
+- **Framer Motion** - Animations
+- **React Hook Form** - Form handling
+- **Zustand** - State management
+- **Concurrently** - Run multiple scripts
+- **TSX** - TypeScript execution for server
 
 ## 📁 Project Structure
 
 ```
 rapid-quack/
 ├── src/
-│   ├── game/           # Phaser.js game logic
-│   ├── components/     # React UI components
-│   ├── server/         # Node.js/Express server
-│   └── shared/         # Shared types and utilities
+│   ├── game/           # Phaser.js game logic (scenes, audio, effects)
+│   ├── components/     # React UI components (including multiplayer UI)
+│   ├── server/         # Node.js/Express server (Socket.io backend)
+│   ├── services/       # Socket service for frontend
+│   ├── shared/
+│   │   ├── types/      # Shared types
+│   │   └── utils/      # Word generator, fallback word lists
+│   └── styles/         # Tailwind and custom CSS
 ├── public/
-│   └── assets/         # Game assets
-└── docs/               # Documentation
+│   └── assets/
+│       └── audio/      # Game audio assets
+├── docs/               # Documentation (game flow, tech stack, todo)
+├── index.html          # Main HTML entry
+└── ...                 # Config and build files
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd rapid-quack
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start development server:
+
 ```bash
 npm run dev
 ```
 
 4. Start backend server (in another terminal):
+
 ```bash
 npm run server
 ```
 
 5. Or run both simultaneously:
+
 ```bash
 npm run dev:full
 ```
@@ -82,6 +103,7 @@ See `docs/TODO_LIST.txt` for detailed development phases and progress tracking.
 
 - `docs/TECH_STACK.txt` - Complete tech stack details
 - `docs/TODO_LIST.txt` - Development roadmap and progress
+- `docs/GAME_FLOW.txt` - Game UI and flow
 
 ## 🤝 Contributing
 
@@ -97,4 +119,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**Happy Typing! 🦆⌨️** 
+**Happy Typing! 🦆⌨️**
