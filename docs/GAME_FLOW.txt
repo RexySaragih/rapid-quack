@@ -1,0 +1,94 @@
+
+Rapid Quack - Web Game GUI Flow
+===============================
+
+1. Welcome Page
+---------------
+[ Welcome to Rapid Quack ]
+    "Come on, quackhead, make a move!"
+           [Play]
+                ↓
+
+2. Mode Selection
+-----------------
+[ Select Mode ]
+ ┌──────────────────────┐
+ │  Single Player       │ ← Currently Implemented
+ ├──────────────────────┤
+ │  Compete with Friend │ ← Phase 4 (Multiplayer)
+ ├──────────────────────┤
+ │  Enter Room ID       │ ← Phase 4 (Multiplayer)
+ └──────────────────────┘
+        ↓
+
+3. Difficulty Selection (Single Player)
+--------------------------------------
+[ Select Difficulty ]
+ ┌──────────────────────────┐
+ │  Easy (5 HP)             │
+ │  Normal (4 HP)           │  
+ │  Hard (3 HP)             │
+ │  Expert (2 HP)           │
+ │  Duckpocalypse (1 HP)    │
+ └──────────────────────────┘
+        ↓
+
+4. Game Scene (Single Player)
+-----------------------------
+[ GAME START ]
+ ┌────────────────────────────┐
+ │ 🦆 "banana"     🦆 "apple"  │ ← Ducks with words
+ │                            │
+ │ Score: 25 | Lives: ❤❤❤    │ ← Implemented
+ │ Combo: 3  | Time: 1:45    │ ← Implemented
+ └────────────────────────────┘
+       [ Type words to shoot ducks! ]
+
+Real-time typing → Instant word matching
+Backspace (correction) → -1 Life
+Time expires → Game Over
+Lives = 0 → Game Over
+        ↓
+
+5. Game Over (Single Player)
+----------------------------
+[ GAME OVER ]
+ ┌────────────────────────────┐
+ │        GAME OVER           │
+ │                            │
+ │     Final Score: 1250      │
+ │                            │
+ │   Press SPACE to restart   │
+ └────────────────────────────┘
+        ↓
+
+6. Multiplayer Flow (Phase 4)
+-----------------------------
+[ Ready Screen ]
+Player 1   - ✅ Ready
+Player 2   - ⏳ Not Ready
+
+[ Countdown: 3...2...1... ]
+        ↓
+
+[ Multiplayer Game Scene ]
+ ┌────────────────────────────┐
+ │ 🦆 "banana"     🦆 "apple"  │
+ │                            │
+ │ Score: 25 | Lives: ❤❤❤    │
+ │ Combo: 3  | Time: 1:45    │
+ │                            │
+ │ Player 1: 1250 pts        │
+ │ Player 2: 980 pts          │
+ └────────────────────────────┘
+
+7. Multiplayer Game Over
+------------------------
+[ Game Over - Leaderboard ]
+
+Player         | Score | Words Hit | Accuracy
+------------------------------------------------------
+Player 1       | 1250  | 45        | 92%
+Player 2       | 980   | 38        | 88%
+
+            [ Leave Room ]

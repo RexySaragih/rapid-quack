@@ -1,0 +1,63 @@
+RAPID-QUACK TECH STACK
+========================
+
+CORE GAME ENGINE
+----------------
+- Phaser.js 3.70.0 - Main game engine for scenes, sprites, physics, and game logic
+- TypeScript 5.2.2 - Type safety across the entire project
+
+FRONTEND & UI
+-------------
+- React 18.2.0 - Main UI wrapper and menu systems
+- React DOM 18.2.0 - DOM rendering
+- Tailwind CSS 3.3.5 - Utility-first CSS framework for styling
+- Framer Motion 10.16.4 - Smooth animations and transitions
+- React Hook Form 7.47.0 - Form handling and validation
+
+BACKEND & MULTIPLAYER
+--------------------
+- Node.js - Server runtime
+- Express - Web server framework
+- Socket.io Client 4.7.2 - Real-time multiplayer communication
+- Phaser Socket.io Plugin - For seamless Phaser.js integration
+
+STATE MANAGEMENT
+---------------
+- Zustand 4.4.1 - Lightweight state management for game state
+
+DEVELOPMENT TOOLS
+-----------------
+- Vite 4.5.0 - Fast development server and build tool
+- ESLint 8.53.0 - Code linting
+- Prettier - Code formatting
+- TypeScript 5.2.2 - Type checking
+- TSX 4.6.0 - TypeScript execution for server
+- Concurrently 8.2.2 - Run multiple commands simultaneously
+
+PROJECT STRUCTURE
+=================
+rapid-quack/
+├── src/
+│   ├── game/           # Phaser.js game scenes and logic
+│   │   ├── scenes/     # Game scenes (Menu, Game, GameOver)
+│   │   ├── sprites/    # Game sprites (Duck, Bullet, etc.)
+│   │   ├── config/     # Game configuration
+│   │   └── utils/      # Game utilities
+│   ├── components/     # React UI components
+│   ├── server/         # Node.js/Express server
+│   ├── shared/         # Shared types and utilities
+│   └── styles/         # CSS and styling
+├── public/
+│   └── assets/         # Game sprites, sounds, fonts
+├── docs/               # Documentation
+└── dist/               # Build output
+
+GAME FEATURES
+=============
+- Single player typing-based duck shooting
+- Multiplayer room-based gameplay
+- Real-time score sharing
+- Word difficulty-based scoring
+- Duck movement patterns
+- Sound effects and animations
+- Responsive design 

@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: 'Orbitron', monospace;
+    background-color: #1a1a2e;
+    color: white;
+  }
+}
+
+@layer components {
+  .game-container {
+    @apply flex flex-col items-center justify-center min-h-screen;
+  }
+
+  .game-title {
+    @apply text-4xl font-game font-bold text-center mb-2;
+  }
+
+  .game-subtitle {
+    @apply text-center text-gray-300;
+  }
+
+  .game-canvas {
+    @apply border-2 border-primary-500 rounded-lg overflow-hidden;
+  }
+
+  .font-orbitron {
+    font-family: 'Orbitron', monospace;
+  }
+}
