@@ -9,6 +9,7 @@ export class RedisService {
     string,
     { data: any; timestamp: number; ttl: number }
   >()
+  private readonly REDIS_PREFIX = 'rapidquack:'
 
   private constructor() {}
 
@@ -17,6 +18,11 @@ export class RedisService {
       RedisService.instance = new RedisService()
     }
     return RedisService.instance
+  }
+
+  // Helper method to add prefix to keys
+  private getKey(key: string): string {
+    return `${this.REDIS_PREFIX}${key}`
   }
 
   public async connect(): Promise<void> {
@@ -89,7 +95,7 @@ export class RedisService {
   public async saveRoom(room: GameRoom, ttl: number = 3600): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const roomKey = `room:${room.id}`
+    const roomKey = this.getKey(`room:${room.id}`)
     const roomData = JSON.stringify(room)
 
     // Use pipelining for better performance
@@ -106,7 +112,7 @@ export class RedisService {
   public async getRoom(roomId: string): Promise<GameRoom | null> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const roomKey = `room:${roomId}`
+    const roomKey = this.getKey(`room:${roomId}`)
 
     // Check cache first
     const cached = this.getCached<GameRoom>(roomKey)
@@ -130,7 +136,7 @@ export class RedisService {
   public async deleteRoom(roomId: string): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const roomKey = `room:${roomId}`
+    const roomKey = this.getKey(`room:${roomId}`)
 
     // Use pipelining for better performance
     const pipeline = this.client.multi()
@@ -156,7 +162,7 @@ export class RedisService {
   ): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const sessionKey = `session:${playerId}`
+    const sessionKey = this.getKey(`session:${playerId}`)
     await this.client.setEx(sessionKey, ttl, JSON.stringify(sessionData))
 
     // Cache session data
@@ -166,7 +172,7 @@ export class RedisService {
   public async getPlayerSession(playerId: string): Promise<any | null> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const sessionKey = `session:${playerId}`
+    const sessionKey = this.getKey(`session:${playerId}`)
 
     // Check cache first
     const cached = this.getCached(sessionKey)
@@ -190,7 +196,7 @@ export class RedisService {
   public async deletePlayerSession(playerId: string): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const sessionKey = `session:${playerId}`
+    const sessionKey = this.getKey(`session:${playerId}`)
     await this.client.del(sessionKey)
 
     // Clear cache
@@ -204,8 +210,8 @@ export class RedisService {
   ): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const leaderboardKey = 'leaderboard'
-    const scoreKey = `score:${playerId}`
+    const leaderboardKey = this.getKey('leaderboard')
+    const scoreKey = this.getKey(`score:${playerId}`)
 
     // Use pipelining for better performance
     const pipeline = this.client.multi()
@@ -220,8 +226,8 @@ export class RedisService {
   ): Promise<Array<{ playerId: string; score: number }>> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const leaderboardKey = 'leaderboard'
-    const cacheKey = `leaderboard:top:${limit}`
+    const leaderboardKey = this.getKey('leaderboard')
+    const cacheKey = this.getKey(`leaderboard:top:${limit}`)
 
     // Check cache first
     const cached =
@@ -246,7 +252,7 @@ export class RedisService {
   ): Promise<boolean> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const rateKey = `rate:${key}`
+    const rateKey = this.getKey(`rate:${key}`)
     const current = await this.client.incr(rateKey)
 
     if (current === 1) {
@@ -260,7 +266,7 @@ export class RedisService {
   public async saveChatMessage(roomId: string, message: any): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const chatKey = `chat:${roomId}`
+    const chatKey = this.getKey(`chat:${roomId}`)
     const messageData = JSON.stringify(message)
 
     // Use pipelining for better performance
@@ -271,7 +277,7 @@ export class RedisService {
     await pipeline.exec()
 
     // Clear chat cache for this room
-    this.cache.delete(`chat:history:${roomId}`)
+    this.cache.delete(this.getKey(`chat:history:${roomId}`))
   }
 
   public async getChatHistory(
@@ -280,8 +286,8 @@ export class RedisService {
   ): Promise<any[]> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const chatKey = `chat:${roomId}`
-    const cacheKey = `chat:history:${roomId}`
+    const chatKey = this.getKey(`chat:${roomId}`)
+    const cacheKey = this.getKey(`chat:history:${roomId}`)
 
     // Check cache first
     const cached = this.getCached<any[]>(cacheKey)
@@ -313,19 +319,19 @@ export class RedisService {
   ): Promise<void> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const statsKey = `stats:${stat}`
-    await this.client.incrBy(statsKey, value)
-    await this.client.expire(statsKey, 86400) // 24 hours
+    const incrementStatsKey = this.getKey(`stats:${stat}`)
+    await this.client.incrBy(incrementStatsKey, value)
+    await this.client.expire(incrementStatsKey, 86400) // 24 hours
 
     // Clear stats cache
-    this.cache.delete('game:stats')
+    this.cache.delete(this.getKey('game:stats'))
   }
 
   public async getGameStats(stat: string): Promise<number> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const statsKey = `stats:${stat}`
-    const value = await this.client.get(statsKey)
+    const getStatsKey = this.getKey(`stats:${stat}`)
+    const value = await this.client.get(getStatsKey)
     return value ? parseInt(value) : 0
   }
 
@@ -333,7 +339,7 @@ export class RedisService {
   public async getAllGameStats(): Promise<Record<string, number>> {
     if (!this.client) throw new Error('Redis not connected')
 
-    const cacheKey = 'game:stats'
+    const cacheKey = this.getKey('game:stats')
     const cached = this.getCached<Record<string, number>>(cacheKey)
     if (cached) return cached
 
@@ -349,7 +355,7 @@ export class RedisService {
 
     // Get stats individually to avoid pipeline type issues
     for (const stat of stats) {
-      const value = await this.client.get(`stats:${stat}`)
+      const value = await this.client.get(this.getKey(`stats:${stat}`))
       statsData[stat] = value ? parseInt(value.toString()) : 0
     }
 
