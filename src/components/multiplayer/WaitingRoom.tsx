@@ -3,6 +3,14 @@ import { socketService } from '../../services/socketService'
 import type { GameRoom } from '../../services/socketService'
 import { WordDifficulty } from '../../shared/types/word'
 
+interface ChatMessage {
+  id: string
+  playerName: string
+  message: string
+  timestamp: number
+  type: 'user' | 'system'
+}
+
 interface WaitingRoomProps {
   roomId: string
   onGameStart: (room: GameRoom) => void
@@ -16,9 +24,56 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
 }) => {
   const [room, setRoom] = useState<GameRoom | null>(null)
   const [error, setError] = useState('')
-  const [chatMessages, setChatMessages] = useState<Array<{id: string, playerName: string, message: string, timestamp: number}>>([])
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
   const chatMessagesEndRef = useRef<HTMLDivElement>(null)
+  const [previousPlayers, setPreviousPlayers] = useState<string[]>([])
+
+  // Helper function to format timestamp
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  // Helper function to add system message
+  const addSystemMessage = (message: string) => {
+    const systemMessage: ChatMessage = {
+      id: Date.now().toString(),
+      playerName: 'System',
+      message,
+      timestamp: Date.now(),
+      type: 'system',
+    }
+    setChatMessages(prev => [...prev, systemMessage])
+  }
+
+  // Helper function to check for player changes
+  const checkPlayerChanges = (newRoom: GameRoom) => {
+    const currentPlayerNames = newRoom.players.map(p => p.name.playerName)
+    const previousPlayerNames = previousPlayers
+
+    // Check for new players (joined)
+    const newPlayers = currentPlayerNames.filter(
+      name => !previousPlayerNames.includes(name)
+    )
+    newPlayers.forEach(playerName => {
+      addSystemMessage(`${playerName} joined the room`)
+    })
+
+    // Check for left players (left)
+    const leftPlayers = previousPlayerNames.filter(
+      name => !currentPlayerNames.includes(name)
+    )
+    leftPlayers.forEach(playerName => {
+      addSystemMessage(`${playerName} left the room`)
+    })
+
+    setPreviousPlayers(currentPlayerNames)
+  }
 
   useEffect(() => {
     console.log('WaitingRoom mounted with roomId:', roomId)
@@ -32,25 +87,47 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
     // Set up event listeners
     socketService.onRoomUpdated(updatedRoom => {
       console.log('updatedRoom', updatedRoom)
-      console.log('Room updated:', updatedRoom, 'Duration:', updatedRoom.gameDuration)
+      console.log(
+        'Room updated:',
+        updatedRoom,
+        'Duration:',
+        updatedRoom.gameDuration
+      )
       if (updatedRoom.id === roomId) {
         // Ensure we're getting a proper GameRoom object
         const validRoom: GameRoom = {
           id: updatedRoom.id || roomId,
-          players: Array.isArray(updatedRoom.players) ? updatedRoom.players : [],
+          players: Array.isArray(updatedRoom.players)
+            ? updatedRoom.players
+            : [],
           difficulty: updatedRoom.difficulty || WordDifficulty.NORMAL,
           isStarted: !!updatedRoom.isStarted,
           gameDuration: updatedRoom.gameDuration || 120,
-          rematchCount: updatedRoom.rematchCount
+          rematchCount: updatedRoom.rematchCount,
         }
         console.log('Setting room with validated data:', validRoom)
+
+        // Check for player changes and add system messages
+        if (room) {
+          checkPlayerChanges(validRoom)
+        } else {
+          // First time loading the room
+          setPreviousPlayers(validRoom.players.map(p => p.name.playerName))
+        }
+
         setRoom(validRoom)
       }
     })
 
     socketService.onGameStart(startedRoom => {
-      console.log('Game starting:', startedRoom, 'Duration:', startedRoom.gameDuration)
+      console.log(
+        'Game starting:',
+        startedRoom,
+        'Duration:',
+        startedRoom.gameDuration
+      )
       if (startedRoom.id === roomId) {
+        addSystemMessage('Game is starting! 🎮')
         onGameStart(startedRoom)
       }
     })
@@ -63,14 +140,16 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
 
     // Set up chat message listener
     console.log('Setting up chat message listener for room:', roomId)
-    socketService.onChatMessage((messageData) => {
+    socketService.onChatMessage(messageData => {
       console.log('Chat message received in component:', messageData)
-      setChatMessages(prev => [...prev, {
+      const chatMessage: ChatMessage = {
         id: Date.now().toString(),
         playerName: messageData.playerName,
         message: messageData.message,
-        timestamp: messageData.timestamp
-      }])
+        timestamp: messageData.timestamp || Date.now(),
+        type: 'user',
+      }
+      setChatMessages(prev => [...prev, chatMessage])
     })
 
     // Request initial room data
@@ -96,6 +175,7 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
   }
 
   const handleLeave = () => {
+    addSystemMessage('You left the room')
     socketService.leaveRoom(roomId)
     onLeave()
   }
@@ -104,19 +184,21 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
     e.preventDefault()
     if (!chatInput.trim()) return
 
-    const playerName = room?.players.find(p => p.id === socketService.getSocketId())?.name?.playerName || 'Unknown'
-    
+    const playerName =
+      room?.players.find(p => p.id === socketService.getSocketId())?.name
+        ?.playerName || 'Unknown'
+
     console.log('Sending chat message:', {
       roomId,
       playerName,
       message: chatInput.trim(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
 
     socketService.sendChatMessage(roomId, {
       playerName,
       message: chatInput.trim(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
 
     setChatInput('')
@@ -150,32 +232,39 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
           {/* Left Column - Room Info */}
           <div className="space-y-6">
             <div>
-              <div className="text-sm font-medium text-gray-400 mb-1">Room ID</div>
+              <div className="text-sm font-medium text-gray-400 mb-1">
+                Room ID
+              </div>
               <div className="text-xl font-mono bg-slate-700 p-2 rounded select-all">
                 {room.id}
               </div>
             </div>
 
             <div>
-              <div className="text-sm font-medium text-gray-400 mb-2">Players</div>
+              <div className="text-sm font-medium text-gray-400 mb-2">
+                Players
+              </div>
               <div className="space-y-2">
-                {Array.isArray(room.players) && room.players.map(player => (
-                  <div
-                    key={player.id}
-                    className="flex items-center justify-between bg-slate-700 p-2 rounded"
-                  >
-                    <span>{String(player.name?.playerName || 'Unknown Player')}</span>
-                    <span
-                      className={`px-2 py-1 rounded text-sm ${
-                        player.isReady
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-yellow-500/20 text-yellow-400'
-                      }`}
+                {Array.isArray(room.players) &&
+                  room.players.map(player => (
+                    <div
+                      key={player.id}
+                      className="flex items-center justify-between bg-slate-700 p-2 rounded"
                     >
-                      {player.isReady ? 'Ready' : 'Not Ready'}
-                    </span>
-                  </div>
-                ))}
+                      <span>
+                        {String(player.name?.playerName || 'Unknown Player')}
+                      </span>
+                      <span
+                        className={`px-2 py-1 rounded text-sm ${
+                          player.isReady
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}
+                      >
+                        {player.isReady ? 'Ready' : 'Not Ready'}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
 
@@ -199,12 +288,14 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
               <button
                 onClick={handleReady}
                 className={`w-full px-6 py-2 rounded transition-colors ${
-                  room.players.find(p => p.id === socketService.getSocketId())?.isReady
+                  room.players.find(p => p.id === socketService.getSocketId())
+                    ?.isReady
                     ? 'bg-green-600 hover:bg-green-700'
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {room.players.find(p => p.id === socketService.getSocketId())?.isReady
+                {room.players.find(p => p.id === socketService.getSocketId())
+                  ?.isReady
                   ? 'Ready!'
                   : 'Ready Up'}
               </button>
@@ -221,7 +312,7 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
           {/* Right Column - Chat */}
           <div className="flex flex-col h-96">
             <div className="text-sm font-medium text-gray-400 mb-2">Chat</div>
-            
+
             {/* Chat Messages */}
             <div className="flex-1 bg-slate-700 rounded p-3 mb-3 overflow-y-auto">
               {chatMessages.length === 0 ? (
@@ -230,14 +321,39 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {chatMessages.map((msg) => {
-                    const isOwnMessage = room?.players.find(p => p.id === socketService.getSocketId())?.name?.playerName === msg.playerName
+                  {chatMessages.map(msg => {
+                    if (msg.type === 'system') {
+                      return (
+                        <div key={msg.id} className="text-sm text-center">
+                          <span className="text-gray-400 italic">
+                            {msg.message}
+                          </span>
+                          <span className="ml-2 text-gray-500 text-xs">
+                            {formatTimestamp(msg.timestamp)}
+                          </span>
+                        </div>
+                      )
+                    }
+
+                    const isOwnMessage =
+                      room?.players.find(
+                        p => p.id === socketService.getSocketId()
+                      )?.name?.playerName === msg.playerName
                     return (
                       <div key={msg.id} className="text-sm">
-                        <span className={`font-medium ${isOwnMessage ? 'text-green-400' : 'text-cyan-400'}`}>
+                        <span
+                          className={`font-medium ${
+                            isOwnMessage ? 'text-green-400' : 'text-cyan-400'
+                          }`}
+                        >
                           {isOwnMessage ? 'You' : msg.playerName}:
                         </span>
-                        <span className="ml-2 text-gray-200">{msg.message}</span>
+                        <span className="ml-2 text-gray-200">
+                          {msg.message}
+                        </span>
+                        <span className="ml-2 text-gray-400 text-xs">
+                          {formatTimestamp(msg.timestamp)}
+                        </span>
                       </div>
                     )
                   })}
@@ -252,8 +368,8 @@ export const WaitingRoom: React.FC<WaitingRoomProps> = ({
                 <input
                   type="text"
                   value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
                       handleSendMessage(e)

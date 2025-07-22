@@ -13,7 +13,8 @@
     "server": "tsx src/server/index.ts",
     "server:prod": "node dist/server/index.js",
     "start": "npm run build:server && concurrently \"npm run server\" \"npm run dev\"",
-    "start:prod": "npm run build:all && concurrently \"npm run server:prod\" \"npm run preview\""
+    "start:prod": "npm run build:all && concurrently \"npm run server:prod\" \"npm run preview\"",
+    "test:redis": "tsx src/server/test-redis.js"
   },
   "dependencies": {
     "@types/socket.io": "^3.0.2",
@@ -23,6 +24,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.30.1",
+    "redis": "^4.6.13",
     "socket.io": "^4.4.1",
     "socket.io-client": "^4.4.1"
   },

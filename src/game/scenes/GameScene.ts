@@ -45,7 +45,10 @@ export class GameScene extends Phaser.Scene {
 
   constructor(difficulty: WordDifficulty, gameDuration: number) {
     super({ key: 'GameScene' })
-    console.log('GameScene constructor - Initializing with duration:', gameDuration)
+    console.log(
+      'GameScene constructor - Initializing with duration:',
+      gameDuration
+    )
     this.currentDifficulty = difficulty
     this.gameTimer = gameDuration // Remove fallback to force proper duration passing
     console.log(
@@ -59,10 +62,10 @@ export class GameScene extends Phaser.Scene {
   preload() {
     // Try to preload audio assets but don't fail if they don't exist
     console.log('Attempting to load audio assets...')
-    
+
     // OPTION: Set this to false to completely disable audio loading
     const enableAudio = true
-    
+
     if (enableAudio) {
       // Set up error handlers for audio loading
       this.load.on('filefailed', (key: string) => {
@@ -81,7 +84,7 @@ export class GameScene extends Phaser.Scene {
       this.load.audio('opponent_hit', 'assets/audio/opponent_hit.wav')
       this.load.audio('background_music', 'assets/audio/background_music.wav')
     }
-    
+
     console.log('Audio loading setup complete (files may not exist)')
   }
 
@@ -94,7 +97,7 @@ export class GameScene extends Phaser.Scene {
     this.ducks = this.add.group()
 
     // Get screen dimensions and define padding
-    const { width, height } = this.scale.gameSize
+    const { height } = this.scale.gameSize
     const padding = 40 // Increased padding for better spacing
 
     // Create score display
@@ -106,11 +109,16 @@ export class GameScene extends Phaser.Scene {
 
     // Create opponent score display for multiplayer
     if (this.isMultiplayer) {
-      this.opponentScoreText = this.add.text(padding, padding + 40, 'Opponent: 0', {
-        fontSize: '24px',
-        color: '#ff4444',
-        fontFamily: 'Orbitron',
-      })
+      this.opponentScoreText = this.add.text(
+        padding,
+        padding + 40,
+        'Opponent: 0',
+        {
+          fontSize: '24px',
+          color: '#ff4444',
+          fontFamily: 'Orbitron',
+        }
+      )
     }
 
     // Create difficulty display
@@ -254,11 +262,14 @@ export class GameScene extends Phaser.Scene {
 
     // Update cursor position
     if (this.cursorText) {
-      this.cursorText.setPosition(padding + (this.inputText?.width || 0), height - padding - 30)
+      this.cursorText.setPosition(
+        padding + (this.inputText?.width || 0),
+        height - padding - 30
+      )
     }
 
     // Update duck spawn boundaries for existing ducks
-    this.duckMap.forEach((duck) => {
+    this.duckMap.forEach(duck => {
       const currentSpeed = duck.getData('speed') || 50
       // Update tween to use new screen width with padding
       this.tweens.killTweensOf(duck)
@@ -299,15 +310,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnDuck(duckData?: DuckData): void {
-    console.log('[spawnDuck] called. gameStarted:', this.gameStarted, 'currentDifficulty:', this.currentDifficulty)
+    console.log(
+      '[spawnDuck] called. gameStarted:',
+      this.gameStarted,
+      'currentDifficulty:',
+      this.currentDifficulty
+    )
     if (!this.currentDifficulty || !this.gameStarted) {
-      console.error('[spawnDuck] Cannot spawn duck: game not started or difficulty not set')
+      console.error(
+        '[spawnDuck] Cannot spawn duck: game not started or difficulty not set'
+      )
       return
     }
 
     // Get screen dimensions and padding
     const { width, height } = this.scale.gameSize
     const padding = 40
+    const minDistance = 80 // Minimum distance between ducks
 
     // If no duck data provided, generate new duck
     if (!duckData) {
@@ -317,10 +336,50 @@ export class GameScene extends Phaser.Scene {
         return
       }
 
+      // Find a valid spawn position that doesn't overlap with existing ducks
+      let spawnX = width - padding
+      let spawnY = Phaser.Math.Between(padding + 160, height - padding - 80)
+      let attempts = 0
+      const maxAttempts = 10
+
+      while (attempts < maxAttempts) {
+        let tooClose = false
+
+        // Check distance to all existing ducks
+        this.ducks
+          .getChildren()
+          .forEach((duck: Phaser.GameObjects.GameObject) => {
+            const duckText = duck as Phaser.GameObjects.Text
+            const distance = Phaser.Math.Distance.Between(
+              spawnX,
+              spawnY,
+              duckText.x,
+              duckText.y
+            )
+            if (distance < minDistance) {
+              tooClose = true
+            }
+          })
+
+        if (!tooClose) {
+          break // Found a good position
+        }
+
+        // Try a new position
+        spawnY = Phaser.Math.Between(padding + 160, height - padding - 80)
+        attempts++
+      }
+
+      // If we couldn't find a good position, skip this spawn
+      if (attempts >= maxAttempts) {
+        console.log('[spawnDuck] Could not find valid spawn position, skipping')
+        return
+      }
+
       duckData = {
         id: Date.now().toString(),
-        x: width - padding, // Start from right edge with padding
-        y: Phaser.Math.Between(padding + 160, height - padding - 80), // Avoid UI areas with proper padding
+        x: spawnX,
+        y: spawnY,
         word: wordData.word,
         difficulty: wordData.difficulty,
         points: wordData.points,
@@ -405,7 +464,10 @@ export class GameScene extends Phaser.Scene {
 
     const padding = 40
     this.inputText.setText(`Type here: ${this.currentWord}`)
-    this.cursorText.setPosition(padding + this.inputText.width, this.scale.gameSize.height - padding - 30)
+    this.cursorText.setPosition(
+      padding + this.inputText.width,
+      this.scale.gameSize.height - padding - 30
+    )
 
     // Check for word matches in real-time as player types
     this.checkWordInRealTime()
@@ -437,7 +499,10 @@ export class GameScene extends Phaser.Scene {
         this.handleDuckHit(duckId)
         this.currentWord = ''
         this.inputText.setText(`Type here: ${this.currentWord}`)
-        this.cursorText.setPosition(padding + this.inputText.width, this.scale.gameSize.height - padding - 30)
+        this.cursorText.setPosition(
+          padding + this.inputText.width,
+          this.scale.gameSize.height - padding - 30
+        )
       }
     })
   }
@@ -572,7 +637,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   public async startGame(): Promise<void> {
-    console.log('[startGame] called. currentDifficulty:', this.currentDifficulty)
+    console.log(
+      '[startGame] called. currentDifficulty:',
+      this.currentDifficulty
+    )
     if (!this.currentDifficulty) {
       const errorMessage = 'Cannot start game without difficulty set!'
       this.inputText.setText(errorMessage)
@@ -691,11 +759,13 @@ export class GameScene extends Phaser.Scene {
       // In multiplayer, notify server
       socketService.emitPlayerGameOver(this.roomId)
       // Show waiting message
-      this.add.text(centerX, centerY + 80, 'Waiting for other players...', {
-        fontSize: '24px',
-        color: '#cccccc',
-        fontFamily: 'Orbitron',
-      }).setOrigin(0.5)
+      this.add
+        .text(centerX, centerY + 80, 'Waiting for other players...', {
+          fontSize: '24px',
+          color: '#cccccc',
+          fontFamily: 'Orbitron',
+        })
+        .setOrigin(0.5)
 
       // Note: The server will emit 'room:gameover' when all players are done
       // which will be handled by the socketService.onRoomGameOver listener
@@ -817,7 +887,7 @@ export class GameScene extends Phaser.Scene {
   destroy() {
     // Clean up resize listener
     this.scale.off('resize', this.handleResize, this)
-    
+
     // Clean up managers
     if (this.audioManager) {
       this.audioManager.destroy()
